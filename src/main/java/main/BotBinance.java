@@ -74,6 +74,7 @@ public class BotBinance {
             // Отсортировал по рангам
             Collections.sort(rankPairList, RankPair.Comparators.RANK);
 
+
             // Поставил ордера на покупку
             balanceScore.orderPlaceBid(rankPairList, tradeService);
 
