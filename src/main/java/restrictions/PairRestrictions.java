@@ -14,9 +14,9 @@ import java.util.*;
 
 public class PairRestrictions {
 
-    static CRUD_LongStoragePair impl = new CRUD();
+    private static CRUD_LongStoragePair impl = new CRUD();
 
-    public static final Map<CurrencyPair, CurrencyPairMetaData> OnlyBTC(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs){
+    public static Map<CurrencyPair, CurrencyPairMetaData> OnlyBTC(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs){
         Iterator it = currencyPairs.entrySet().iterator();
         while(it.hasNext()) {
             Map.Entry<CurrencyPair, CurrencyPairMetaData> item = (Map.Entry<CurrencyPair, CurrencyPairMetaData>) it.next();
@@ -28,26 +28,10 @@ public class PairRestrictions {
     }
 
 
-    public static Map<CurrencyPair, CurrencyPairMetaData> OnlyBTC_Like_Pro(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs){
-        currencyPairs.entrySet().removeIf(e -> !Currency.BTC.equals(e.getKey().counter));
-        return currencyPairs;
-    }
-
-
     public static Map<CurrencyPair, CurrencyPairMetaData> RemoveLongStorageDB_forPair(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs) throws SQLException {
         List<CurrencyPair> currencyPairList = impl.SelectPairs();
         for(CurrencyPair currencyPair:currencyPairList){
             currencyPairs.entrySet().removeIf(e -> currencyPair.equals(e.getKey()));
-        }
-        return currencyPairs;
-    }
-
-
-    public static Map<CurrencyPair, CurrencyPairMetaData> TradablePairOnly(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs){
-        Map<CurrencyPair, CurrencyPairMetaData> currencyList = new HashMap<>();
-        for(Map.Entry<CurrencyPair, CurrencyPairMetaData> entry: currencyPairs.entrySet()){
-
-            CurrencyPairMetaData currencyPairMetaData = currencyPairs.get( entry.getKey());
         }
         return currencyPairs;
     }

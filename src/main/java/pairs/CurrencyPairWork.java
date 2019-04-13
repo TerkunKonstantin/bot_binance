@@ -11,7 +11,7 @@ public class CurrencyPairWork {
 
     public static Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairGet(ExchangeMetaData exchangeMetaData){
         Map<CurrencyPair, CurrencyPairMetaData> currencyPairs = exchangeMetaData.getCurrencyPairs();
-        Map<CurrencyPair, CurrencyPairMetaData> currencyPairsForWork = new HashMap();
+        Map<CurrencyPair, CurrencyPairMetaData> currencyPairsForWork = new HashMap<>();
         for (Map.Entry<CurrencyPair, CurrencyPairMetaData> entry : currencyPairs.entrySet()) {
             currencyPairsForWork.put(entry.getKey(),entry.getValue());
         }
@@ -19,12 +19,10 @@ public class CurrencyPairWork {
     }
 
     public static Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairForSale(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs){
-        Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairForSale = new HashMap();
+        Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairForSale = new HashMap<>();
         for (Map.Entry<CurrencyPair, CurrencyPairMetaData> entry : currencyPairs.entrySet()) {
             CurrencyPairForSale.put(entry.getKey(),entry.getValue());
         }
         return CurrencyPairForSale;
     }
-
-
 }

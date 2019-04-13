@@ -12,11 +12,11 @@ import java.util.Map;
 public class ThreadGetTicker extends Thread {
 
     Ticker ticker;
-    MarketDataService marketDataService;
+    private MarketDataService marketDataService;
     CurrencyPair currencyPair;
     OrderBook orderBook;
 
-    public ThreadGetTicker(Map.Entry<CurrencyPair, CurrencyPairMetaData> entry, MarketDataService marketDataService){
+    ThreadGetTicker(Map.Entry<CurrencyPair, CurrencyPairMetaData> entry, MarketDataService marketDataService){
         this.currencyPair = entry.getKey();
         this.marketDataService = marketDataService;
         this.start();
@@ -31,5 +31,4 @@ public class ThreadGetTicker extends Thread {
             e.printStackTrace();
         }
     }
-
 }

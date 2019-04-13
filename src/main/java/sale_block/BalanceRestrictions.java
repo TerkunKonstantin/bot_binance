@@ -10,24 +10,23 @@ import restrictions.PairRestrictions;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BalanceRestrictions {
+class BalanceRestrictions {
 
-    public static BalanceScore RemoveLongStorage(BalanceScore balanceScore){
+    static BalanceScore RemoveLongStorage(BalanceScore balanceScore){
         try {
-            balanceScore.updateBalance = PairRestrictions.RemoveLongStorageDB_forBalance(balanceScore.updateBalance);
+            PairRestrictions.RemoveLongStorageDB_forBalance(balanceScore.updateBalance);
         } catch (SQLException e) {
-            balanceScore.updateBalance = new HashMap();
+            balanceScore.updateBalance.clear();
             e.printStackTrace();
         }
         return balanceScore;
     }
 
-    public static BalanceScore  OnlyBTC(BalanceScore balanceScore){
-        List<Currency> currencyList = new ArrayList();
+    static BalanceScore  OnlyBTC(BalanceScore balanceScore){
+        List<Currency> currencyList = new ArrayList<>();
         for (Map.Entry<Currency, Balance> entry : balanceScore.updateBalance.entrySet()) {
             // Если по паре с BTC торговая информация отсутствует, то мы выкидываем пару
             Currency currency = entry.getKey();
@@ -44,8 +43,8 @@ public class BalanceRestrictions {
 
 
 
-    public static BalanceScore EnoughForSale(BalanceScore balanceScore){
-        List<Currency> currencyList = new ArrayList();
+    static BalanceScore EnoughForSale(BalanceScore balanceScore){
+        List<Currency> currencyList = new ArrayList<>();
         for (Map.Entry<Currency, Balance> entry : balanceScore.updateBalance.entrySet()) {
             // Если по паре недостаточно средств, то выкидываем ее
             Currency currency = entry.getKey();
@@ -57,12 +56,8 @@ public class BalanceRestrictions {
             if(available.compareTo(minAmount)<0){
                 currencyList.add(currency);
             }
-
         }
         balanceScore.updateBalance.keySet().removeAll(currencyList);
         return balanceScore;
     }
-
-
-
 }

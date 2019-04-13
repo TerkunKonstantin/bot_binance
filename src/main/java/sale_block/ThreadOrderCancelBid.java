@@ -1,6 +1,5 @@
 package sale_block;
 
-
 import org.knowm.xchange.binance.service.BinanceCancelOrderParams;
 import org.knowm.xchange.dto.Order;
 import org.knowm.xchange.dto.trade.LimitOrder;
@@ -10,10 +9,10 @@ import java.io.IOException;
 
 public class ThreadOrderCancelBid extends Thread {
 
-    LimitOrder limitOrder;
-    TradeService tradeService;
+    private LimitOrder limitOrder;
+    private TradeService tradeService;
 
-    public ThreadOrderCancelBid(LimitOrder limitOrder, TradeService tradeService){
+    ThreadOrderCancelBid(LimitOrder limitOrder, TradeService tradeService){
         this.limitOrder = limitOrder;
         this.tradeService = tradeService;
         if (limitOrder.getType().equals(Order.OrderType.BID)) this.start();
@@ -27,5 +26,4 @@ public class ThreadOrderCancelBid extends Thread {
             e.printStackTrace();
         }
     }
-
 }

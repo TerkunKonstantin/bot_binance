@@ -6,12 +6,10 @@ import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.binance.BinanceExchange;
 
 public class BinanceAuthorization {
-    public static Exchange createExchange() {
+    static Exchange createExchange() {
         ExchangeSpecification exSpec = new BinanceExchange().getDefaultExchangeSpecification();
         exSpec.setApiKey(Config.getApiKeyB());
         exSpec.setSecretKey(Config.getSecretKeyB());
         return ExchangeFactory.INSTANCE.createExchange(exSpec);
     }
-
-
 }

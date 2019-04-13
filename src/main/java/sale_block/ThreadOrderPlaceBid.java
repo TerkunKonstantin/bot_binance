@@ -14,14 +14,14 @@ import java.math.RoundingMode;
 import java.util.Date;
 
 public class ThreadOrderPlaceBid extends Thread {
-    CurrencyPair currencyPair;
-    Ticker ticker;
-    TradeService tradeService;
-    CurrencyPairMetaData currencyPairMetaData;
-    double rank;
-    boolean makeTrade;
+    private CurrencyPair currencyPair;
+    private Ticker ticker;
+    private TradeService tradeService;
+    private CurrencyPairMetaData currencyPairMetaData;
+    private double rank;
+    private boolean makeTrade;
 
-    public ThreadOrderPlaceBid(CurrencyPair currencyPair, Ticker ticker, double rank, CurrencyPairMetaData currencyPairMetaData, TradeService tradeService){
+    ThreadOrderPlaceBid(CurrencyPair currencyPair, Ticker ticker, double rank, CurrencyPairMetaData currencyPairMetaData, TradeService tradeService){
         this.currencyPair = currencyPair;
         this.ticker = ticker;
         this.tradeService = tradeService;
@@ -57,6 +57,5 @@ public class ThreadOrderPlaceBid extends Thread {
         }
          */
     }
-
 }
 

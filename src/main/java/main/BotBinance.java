@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
+import static java.util.Collections.*;
+
 public class BotBinance {
     public static void main(String[] args) throws IOException {
         Locale.setDefault(Locale.US);
@@ -42,8 +44,6 @@ public class BotBinance {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        // ТУТ БУДЕТ НАЧАЛО ЦИКЛА возможно))
 
         while(true) {
             try {
@@ -72,9 +72,8 @@ public class BotBinance {
             }
 
             // Отсортировал по рангам
-            Collections.sort(rankPairList, RankPair.Comparators.RANK);
-
-
+            sort(rankPairList, RankPair.Comparators.RANK);
+            
             // Поставил ордера на покупку
             balanceScore.orderPlaceBid(rankPairList, tradeService);
 

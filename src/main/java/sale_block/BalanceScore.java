@@ -25,15 +25,15 @@ import java.util.Map;
 public class BalanceScore {
     Map<Currency, Balance> updateBalance;
     ExchangeMetaData exchangeMetaData;
-    LinkedList<ThreadOrderPlaceAsk> threadOrderPlaceAsks;
-    LinkedList<ThreadOrderPlaceBid> threadOrderPlaceBids;
-    LinkedList<ThreadOrderCancelBid> ThreadOrderCancelBids;
-    BigDecimal availableBTC;
+    private LinkedList<ThreadOrderPlaceAsk> threadOrderPlaceAsks;
+    private LinkedList<ThreadOrderPlaceBid> threadOrderPlaceBids;
+    private LinkedList<ThreadOrderCancelBid> ThreadOrderCancelBids;
+    private BigDecimal availableBTC;
 
     public BalanceScore(Map<Currency, Balance> balanceMap, ExchangeMetaData exchangeMetaData){
             this.exchangeMetaData = exchangeMetaData;
             //меняем неизменяемую мапу на обычную
-            Map<Currency, Balance> currencyBalanceForWork = new HashMap();
+            Map<Currency, Balance> currencyBalanceForWork = new HashMap<>();
             for (Map.Entry<Currency, Balance> entry : balanceMap.entrySet()) {
             currencyBalanceForWork.put(entry.getKey(),entry.getValue());
             }
@@ -80,7 +80,7 @@ public class BalanceScore {
         WaitThread(threadOrderPlaceAsks);
     }
 
-    public int getAvailableBidOrderCount(){
+    private int getAvailableBidOrderCount(){
         int bidOrderCount = 0;
         BigDecimal minRate = Config.getMinRate();
         availableBTC.divide(minRate, RoundingMode.HALF_DOWN).intValue();
@@ -114,6 +114,8 @@ public class BalanceScore {
     }
 
     public void orderBidCancel(TradeService tradeService){
+        // Уменьшил время ожидания до 30 секунд (на следующий прогон) если покупки не будет, то ждать нечего
+        Config.setMillisecondsWaitMin();
         try {
             List<LimitOrder> openOrders = tradeService.getOpenOrders().getOpenOrders();
             for(LimitOrder limitOrder : openOrders){
@@ -127,7 +129,7 @@ public class BalanceScore {
     }
 
 
-    public static <T> void WaitThread(LinkedList<T> list)   {
+    private static <T> void WaitThread(LinkedList<T> list)   {
         for(T thread:  list) {
             if(((Thread) thread).isAlive())
             {
@@ -140,5 +142,4 @@ public class BalanceScore {
             }
         }
     }
-
 }
