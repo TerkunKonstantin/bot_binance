@@ -1,6 +1,7 @@
 package sale_block;
 
 import main.Config;
+import org.knowm.xchange.Exchange;
 import org.knowm.xchange.binance.service.BinanceTradeHistoryParams;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
@@ -11,6 +12,8 @@ import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.UserTrade;
+import org.knowm.xchange.service.account.AccountService;
+import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.knowm.xchange.service.trade.TradeService;
 import pairs.RankPair;
 
@@ -25,41 +28,50 @@ import java.util.Map;
 public class BalanceScore {
     Map<Currency, Balance> updateBalance;
     ExchangeMetaData exchangeMetaData;
+    TradeService tradeService;
+    AccountService accountService;
     private LinkedList<ThreadOrderPlaceAsk> threadOrderPlaceAsks;
     private LinkedList<ThreadOrderPlaceBid> threadOrderPlaceBids;
     private LinkedList<ThreadOrderCancelBid> ThreadOrderCancelBids;
     private BigDecimal availableBTC;
 
-    public BalanceScore(Map<Currency, Balance> balanceMap, ExchangeMetaData exchangeMetaData){
-            this.exchangeMetaData = exchangeMetaData;
-            //меняем неизменяемую мапу на обычную
-            Map<Currency, Balance> currencyBalanceForWork = new HashMap<>();
-            for (Map.Entry<Currency, Balance> entry : balanceMap.entrySet()) {
+    public BalanceScore(Exchange binance) throws IOException {
+        // получаю необходимые сервисы
+        ExchangeMetaData exchangeMetaData = binance.getExchangeMetaData();
+        TradeService tradeService = binance.getTradeService();
+        AccountService accountService = binance.getAccountService();
+        this.exchangeMetaData = exchangeMetaData;
+        this.tradeService = tradeService;
+        this.accountService = accountService;
+        //меняем неизменяемую мапу на обычную
+        Map<Currency, Balance> balanceMap = accountService.getAccountInfo().getWallet().getBalances();
+        Map<Currency, Balance> currencyBalanceForWork = new HashMap<>();
+        for (Map.Entry<Currency, Balance> entry : balanceMap.entrySet()) {
             currencyBalanceForWork.put(entry.getKey(),entry.getValue());
-            }
-            this.updateBalance = currencyBalanceForWork;
-            availableBTC = updateBalance.get(Currency.BTC).getAvailable();
+        }
+        this.updateBalance = currencyBalanceForWork;
+        availableBTC = updateBalance.get(Currency.BTC).getAvailable();
 
-            this.threadOrderPlaceAsks = new LinkedList<>();
-            this.threadOrderPlaceBids = new LinkedList<>();
-            this.ThreadOrderCancelBids = new LinkedList<>();
+        this.threadOrderPlaceAsks = new LinkedList<>();
+        this.threadOrderPlaceBids = new LinkedList<>();
+        this.ThreadOrderCancelBids = new LinkedList<>();
 
-            // Убрал пары долгого хранения из списка продаж
-            BalanceRestrictions.RemoveLongStorage(this);
+        // Убрал пары долгого хранения из списка продаж
+        BalanceRestrictions.RemoveLongStorage(this);
 
-            // Оставил только те пары, которые торгуются с BTC
-            BalanceRestrictions.OnlyBTC(this);
+        // Оставил только те пары, которые торгуются с BTC
+        BalanceRestrictions.OnlyBTC(this);
 
-            // Посмотреть по каким парам достаточно для продажи, остальные убрать (Проверку делаю по полю minAmount)
-            // TODO обработка нулпоинтерэкзепшен, если будет перед OnlyBTC до этого момента (!Обязательно после OnlyBTC!)
-            BalanceRestrictions.EnoughForSale(this);
+        // Посмотреть по каким парам достаточно для продажи, остальные убрать (Проверку делаю по полю minAmount)
+        // TODO обработка нулпоинтерэкзепшен, если будет перед OnlyBTC до этого момента (!Обязательно после OnlyBTC!)
+        BalanceRestrictions.EnoughForSale(this);
     }
 
     public LinkedList<ThreadOrderPlaceAsk> getThreadOrderPlaceAsks() {
         return threadOrderPlaceAsks;
     }
 
-    public void orderPlaceAsk( TradeService tradeService){
+    public void orderPlaceAsk(){
         // бегу по парам баланса и запускаю поток на расстановку ордера, передаю ему историю торгов
         for (Map.Entry<Currency, Balance> entry : this.updateBalance.entrySet()) {
             try {
@@ -88,7 +100,7 @@ public class BalanceScore {
         return bidOrderCount;
     }
 
-    public void orderPlaceBid(List<RankPair> rankPairList, TradeService tradeService){
+    public void orderPlaceBid(List<RankPair> rankPairList){
         int bidOrderCount = this.getAvailableBidOrderCount();
         if (bidOrderCount==0) return;
         for(RankPair rankPair : rankPairList){
@@ -107,13 +119,13 @@ public class BalanceScore {
             bidOrderCount-=1;
             if(bidOrderCount==0) {
                 WaitThread(threadOrderPlaceAsks);
-                System.out.println();
+                System.out.println("-");
                 return;
             }
         }
     }
 
-    public void orderBidCancel(TradeService tradeService){
+    public void orderBidCancel(){
         // Уменьшил время ожидания до 30 секунд (на следующий прогон) если покупки не будет, то ждать нечего
         Config.setMillisecondsWaitMin();
         try {

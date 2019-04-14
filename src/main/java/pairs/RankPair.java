@@ -1,6 +1,7 @@
 package pairs;
 
 import main.ConfigIndexParams;
+import org.knowm.xchange.Exchange;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.marketdata.OrderBook;
 import org.knowm.xchange.dto.marketdata.Ticker;
@@ -13,18 +14,18 @@ import java.math.RoundingMode;
 import java.util.*;
 
 public class RankPair {
-    CurrencyPair currencyPair;
-    CurrencyPairMetaData currencyPairMetaData;
-    OrderBook orderBook;
-    Ticker ticker;
-    double rank;
+    private CurrencyPair currencyPair;
+    private CurrencyPairMetaData currencyPairMetaData;
+    private OrderBook orderBook;
+    private Ticker ticker;
+    private double rank;
     // Будем хранить значения рассчитанных индексов, чтобы понимать из чего сложился ранг для пары
-    double volumeIndex;
-    double askBidDifferenceIndex;
-    double PositionIndex;
+    private double volumeIndex;
+    private double askBidDifferenceIndex;
+    private double PositionIndex;
 
 
-    public RankPair(CurrencyPair currencyPair, CurrencyPairMetaData currencyPairMetaData, OrderBook orderBook, Ticker ticker){
+    private RankPair(CurrencyPair currencyPair, CurrencyPairMetaData currencyPairMetaData, OrderBook orderBook, Ticker ticker){
         this.currencyPair = currencyPair;
         this.currencyPairMetaData = currencyPairMetaData;
         this.orderBook = orderBook;
@@ -33,7 +34,8 @@ public class RankPair {
     }
 
 
-    public static List<RankPair> GenerateRankPairList(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs, MarketDataService marketDataService) {
+    public static List<RankPair> GenerateRankPairList(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs, Exchange binance) {
+        MarketDataService marketDataService = binance.getMarketDataService();
         // Потоками получил по каждой паре список ордеров и тикет
         LinkedList<ThreadGetTicker> threadGetTickerLinkedList = new LinkedList<>();
         for(Map.Entry<CurrencyPair, CurrencyPairMetaData> entry: currencyPairs.entrySet()){
@@ -44,7 +46,7 @@ public class RankPair {
         WaitThread(threadGetTickerLinkedList);
 
         // Создал объекты рангов и вернул список
-        List<RankPair> rankPairList = new ArrayList();
+        List<RankPair> rankPairList = new ArrayList<>();
         for(ThreadGetTicker threadGetTicker : threadGetTickerLinkedList){
             CurrencyPair currencyPair = threadGetTicker.currencyPair;
             CurrencyPairMetaData currencyPairMetaData = currencyPairs.get(currencyPair);
@@ -64,7 +66,7 @@ public class RankPair {
         // индекс доминирования биткоина - хочу тянуть откуда-то (хорошая штука), писать в БД и считать его движение вверх или вниз
     }
 
-    public void CalculatePositionIndex() {
+    private void CalculatePositionIndex() {
         if(rank<=0) return;
         BigDecimal high = ticker.getHigh();
         BigDecimal low = ticker.getLow();
