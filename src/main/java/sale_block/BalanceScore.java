@@ -13,7 +13,6 @@ import org.knowm.xchange.dto.meta.ExchangeMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.UserTrade;
 import org.knowm.xchange.service.account.AccountService;
-import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.knowm.xchange.service.trade.TradeService;
 import pairs.RankPair;
 
@@ -45,10 +44,7 @@ public class BalanceScore {
         this.accountService = accountService;
         //меняем неизменяемую мапу на обычную
         Map<Currency, Balance> balanceMap = accountService.getAccountInfo().getWallet().getBalances();
-        Map<Currency, Balance> currencyBalanceForWork = new HashMap<>();
-        for (Map.Entry<Currency, Balance> entry : balanceMap.entrySet()) {
-            currencyBalanceForWork.put(entry.getKey(),entry.getValue());
-        }
+        Map<Currency, Balance> currencyBalanceForWork = new HashMap<>(balanceMap);
         this.updateBalance = currencyBalanceForWork;
         availableBTC = updateBalance.get(Currency.BTC).getAvailable();
 

@@ -13,18 +13,12 @@ public class CurrencyPairWork {
     public static Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairGet(Exchange binance){
         ExchangeMetaData exchangeMetaData = binance.getExchangeMetaData();
         Map<CurrencyPair, CurrencyPairMetaData> currencyPairs = exchangeMetaData.getCurrencyPairs();
-        Map<CurrencyPair, CurrencyPairMetaData> currencyPairsForWork = new HashMap<>();
-        for (Map.Entry<CurrencyPair, CurrencyPairMetaData> entry : currencyPairs.entrySet()) {
-            currencyPairsForWork.put(entry.getKey(),entry.getValue());
-        }
+        Map<CurrencyPair, CurrencyPairMetaData> currencyPairsForWork = new HashMap<>(currencyPairs);
         return currencyPairsForWork;
     }
 
     public static Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairForSale(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs){
-        Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairForSale = new HashMap<>();
-        for (Map.Entry<CurrencyPair, CurrencyPairMetaData> entry : currencyPairs.entrySet()) {
-            CurrencyPairForSale.put(entry.getKey(),entry.getValue());
-        }
+        Map<CurrencyPair, CurrencyPairMetaData> CurrencyPairForSale = new HashMap<>(currencyPairs);
         return CurrencyPairForSale;
     }
 }

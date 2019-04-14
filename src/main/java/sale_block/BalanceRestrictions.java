@@ -42,7 +42,6 @@ class BalanceRestrictions {
     }
 
 
-
     static BalanceScore EnoughForSale(BalanceScore balanceScore){
         List<Currency> currencyList = new ArrayList<>();
         for (Map.Entry<Currency, Balance> entry : balanceScore.updateBalance.entrySet()) {
