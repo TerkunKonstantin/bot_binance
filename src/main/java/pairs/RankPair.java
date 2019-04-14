@@ -71,7 +71,7 @@ public class RankPair {
         BigDecimal high = ticker.getHigh();
         BigDecimal low = ticker.getLow();
         BigDecimal last = ticker.getLast();
-        if((low.compareTo(BigDecimal.ZERO) > 0) && (low != null)){
+        if((low.compareTo(BigDecimal.ZERO) > 0)){
             double PositionIndex = high.subtract(last).divide(high.subtract(low),BigDecimal.ROUND_HALF_EVEN).doubleValue();
             this.rank = this.rank  * PositionIndex;
             this.PositionIndex = PositionIndex;
@@ -82,7 +82,7 @@ public class RankPair {
         }
     }
 
-    public void CalculateAskBidDifferenceIndex() {
+    private void CalculateAskBidDifferenceIndex() {
         if(rank<=0) return;
         BigDecimal ask = ticker.getAsk();
         BigDecimal bid = ticker.getBid();
@@ -95,7 +95,7 @@ public class RankPair {
         this.rank = rank * askBidDifferenceIndex;
     }
 
-    public void CalculateVolumeIndex(){
+    private void CalculateVolumeIndex(){
         if(rank<=0) return;
         BigDecimal limitPercentAsk = ConfigIndexParams.getVolumeIndexLimitPercent().movePointLeft(2).add(BigDecimal.ONE);
         BigDecimal limitPercentBid = BigDecimal.ONE.subtract(ConfigIndexParams.getVolumeIndexLimitPercent().movePointLeft(2));
@@ -110,19 +110,19 @@ public class RankPair {
 
         for(LimitOrder limitOrder:asks){
             BigDecimal limitPrice = limitOrder.getLimitPrice();
-            if(limitPrice.compareTo(limitAskPrice)==1) break;
+            if(limitPrice.compareTo(limitAskPrice) > 0) break;
             BigDecimal originalAmountAsk = limitOrder.getOriginalAmount();
             sumOriginalAmountAsk = sumOriginalAmountAsk.add(originalAmountAsk);
         }
 
         for(LimitOrder limitOrder:bids){
             BigDecimal limitPrice = limitOrder.getLimitPrice();
-            if(limitPrice.compareTo(limitBidPrice)==-1) break;
+            if(limitPrice.compareTo(limitBidPrice) < 0) break;
             BigDecimal originalAmountBid = limitOrder.getOriginalAmount();
             sumOriginalAmountBid = sumOriginalAmountBid.add(originalAmountBid);
         }
 
-        if((sumOriginalAmountAsk.compareTo(BigDecimal.ZERO) > 0) && (sumOriginalAmountAsk != null)){
+        if(sumOriginalAmountAsk.compareTo(BigDecimal.ZERO) > 0){
             double volumeIndex = sumOriginalAmountBid.divide(sumOriginalAmountAsk,1, RoundingMode.HALF_UP).doubleValue();
             this.rank = this.rank  * volumeIndex;
             this.volumeIndex = volumeIndex;
@@ -135,7 +135,7 @@ public class RankPair {
 
 
     // TODO использую метод в двух местах, может его нужно вынести куда-то и сделать обращение единым, а не дублировать в классах
-    public static <T> void WaitThread(LinkedList<T> list)   {
+    private static <T> void WaitThread(LinkedList<T> list)   {
         for(T thread:  list) {
             if(((Thread) thread).isAlive())
             {

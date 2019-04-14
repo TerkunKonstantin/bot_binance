@@ -28,8 +28,8 @@ import java.util.Map;
 public class BalanceScore {
     Map<Currency, Balance> updateBalance;
     ExchangeMetaData exchangeMetaData;
-    TradeService tradeService;
-    AccountService accountService;
+    private TradeService tradeService;
+    private AccountService accountService;
     private LinkedList<ThreadOrderPlaceAsk> threadOrderPlaceAsks;
     private LinkedList<ThreadOrderPlaceBid> threadOrderPlaceBids;
     private LinkedList<ThreadOrderCancelBid> ThreadOrderCancelBids;
