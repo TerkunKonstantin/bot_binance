@@ -123,7 +123,7 @@ public class BalanceScore {
 
     public void orderBidCancel(){
         // Уменьшил время ожидания до 30 секунд (на следующий прогон) если покупки не будет, то ждать нечего
-        Config.setMillisecondsWaitMin();
+        Config.setSecondsWait(Config.getSecondsWaitMin());
         try {
             List<LimitOrder> openOrders = tradeService.getOpenOrders().getOpenOrders();
             for(LimitOrder limitOrder : openOrders){

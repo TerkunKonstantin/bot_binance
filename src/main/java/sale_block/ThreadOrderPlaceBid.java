@@ -48,10 +48,14 @@ public class ThreadOrderPlaceBid extends Thread {
         }
         LimitOrder bidOrder = new LimitOrder(Order.OrderType.BID, amount, currencyPair, null, null, priceForBuy);
         System.out.println("Покупаю с: " + date + " Валюту " +currencyPair + " по " + priceForBuy + " с рейтингом " + rank);
+
         /*
         try {
             tradeService.placeLimitOrder(bidOrder);
             this.makeTrade = true;
+            // Увеличил время ожидания до 2 минут (на следующий прогон) надо ж продать
+            Config.setSecondsWait(Config.getSecondsWaitMax());
+
         } catch (IOException e) {
             e.printStackTrace();
         }

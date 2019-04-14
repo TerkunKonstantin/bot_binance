@@ -60,8 +60,6 @@ public class ThreadOrderPlaceAsk extends Thread {
             try {
                 tradeService.placeLimitOrder(ask);
                 this.makeTrade = true;
-                // Увеличил время ожидания до 2 минут (на следующий прогон) надо ж
-                Config.setMillisecondsWaitMax();
             } catch (IOException e) {
                 e.printStackTrace();
             }

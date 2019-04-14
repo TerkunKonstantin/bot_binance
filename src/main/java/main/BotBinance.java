@@ -2,7 +2,6 @@ package main;
 
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
-import org.knowm.xchange.binance.BinanceExchange;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import pairs.CurrencyPairWork;
@@ -13,8 +12,7 @@ import sale_block.BalanceScore;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-
-import static java.util.Collections.*;
+import java.util.concurrent.TimeUnit;
 
 class BotBinance {
 
@@ -69,7 +67,8 @@ class BotBinance {
             balanceScore.orderPlaceBid(rankPairList);
 
             // Подождал время, достаточное для покупки
-            Thread.sleep(Config.getMillisecondsWait());
+            long millisecondsWait = TimeUnit.SECONDS.toMillis(Config.getSecondsWait());
+            Thread.sleep(millisecondsWait);
 
             // Делаем отмену ордеров в пункте выше
             balanceScore.orderBidCancel();
