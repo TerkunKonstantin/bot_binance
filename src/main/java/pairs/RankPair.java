@@ -60,9 +60,9 @@ public class RankPair {
 
 
     public void CalculateRank(){
-        if(ConfigIndexParams.getVolumeIndexАctivity()) this.CalculateVolumeIndex();
+        if(ConfigIndexParams.getVolumeIndexActivity()) this.CalculateVolumeIndex();
         if(ConfigIndexParams.getAskBidDifferenceIndexActivity()) this.CalculateAskBidDifferenceIndex();
-        if(ConfigIndexParams.getPositionIndexАctivity()) this.CalculatePositionIndex();
+        if(ConfigIndexParams.getPositionIndexActivity()) this.CalculatePositionIndex();
         // индекс доминирования биткоина - хочу тянуть откуда-то (хорошая штука), писать в БД и считать его движение вверх или вниз
     }
 
