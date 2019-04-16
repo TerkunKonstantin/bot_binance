@@ -7,6 +7,7 @@ import org.knowm.xchange.dto.marketdata.Ticker;
 import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.service.trade.TradeService;
+import serviceStat.StatServiceApp;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -20,6 +21,8 @@ public class ThreadOrderPlaceBid extends Thread {
     private CurrencyPairMetaData currencyPairMetaData;
     private double rank;
     private boolean makeTrade;
+    private static StatServiceApp controller = new StatServiceApp();
+
 
     ThreadOrderPlaceBid(CurrencyPair currencyPair, Ticker ticker, double rank, CurrencyPairMetaData currencyPairMetaData, TradeService tradeService){
         this.currencyPair = currencyPair;
@@ -48,7 +51,7 @@ public class ThreadOrderPlaceBid extends Thread {
         }
         LimitOrder bidOrder = new LimitOrder(Order.OrderType.BID, amount, currencyPair, null, null, priceForBuy);
         System.out.println("Покупаю с: " + date + " Валюту " +currencyPair + " по " + priceForBuy + " с рейтингом " + rank);
-
+        controller.start(currencyPair.base.toString() + currencyPair.counter.toString(),priceForBuy.toString());
         /*
         try {
             tradeService.placeLimitOrder(bidOrder);

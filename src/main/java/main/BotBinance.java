@@ -8,6 +8,7 @@ import pairs.CurrencyPairWork;
 import pairs.RankPair;
 import restrictions.PairRestrictions;
 import sale_block.BalanceScore;
+import serviceStat.StatServiceApp;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -35,6 +36,10 @@ class BotBinance {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    void CreateStatisticRetrofit() {
+        StatServiceApp controller = new StatServiceApp();
     }
 
     void Trade() {

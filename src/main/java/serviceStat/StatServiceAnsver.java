@@ -1,15 +1,30 @@
 package serviceStat;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
+import java.math.BigDecimal;
+
 public class StatServiceAnsver {
 
-    String subject;
+    @SerializedName("symbol")
+    @Expose
+    private String symbol;
+    @SerializedName("price")
+    @Expose
+    private BigDecimal price;
 
-    public String getSubject() {
-        return subject;
+    @Override
+    public String toString() {
+        return "StatServiceAnsver{" +
+                "symbol='" + symbol + '\'' +
+                ", price=" + price +
+                ", timestamp=" + timestamp +
+                '}';
     }
 
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
+    @SerializedName("timestamp")
+    @Expose
+    private long timestamp;
 
 }
