@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CRUD implements CRUD_LongStoragePair {
-    private final static String USERNAME = "root";
-    private final static String PASSWORD = "root";
-    private final static String URL = "jdbc:mysql://localhost:3306/mysql?autoReconnect=true&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC";
+    private final static String USERNAME = CRUD_config.getUSERNAME();
+    private final static String PASSWORD = CRUD_config.getPASSWORD();
+    private final static String URL = CRUD_config.getURL();
 
     @Override
     public List<CurrencyPair> SelectPairs() throws SQLException {

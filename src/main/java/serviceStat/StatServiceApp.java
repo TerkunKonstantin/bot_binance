@@ -31,7 +31,7 @@ public class StatServiceApp implements Callback<StatServiceAnsver> {
             StatServiceAnsver answer = response.body();
             System.out.println(answer);
         } else {
-            System.out.println(response.errorBody());
+            System.out.println(response.errorBody().source());
         }
     }
 
