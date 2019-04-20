@@ -56,15 +56,15 @@ public class BalanceScore {
     /**
      * Расставляем оредера на продажу
      */
-    public void orderPlaceAsk(){
+    public void orderPlaceAsk() {
         // бегу по парам баланса и запускаю поток на расстановку ордера, передаю ему историю торгов
         for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
             try {
                 CurrencyPair currencyPair = new CurrencyPair(entry.getKey(), Config.getCurrency_for_sale());
                 List<UserTrade> userTrades = tradeService.getTradeHistory(new BinanceTradeHistoryParams(currencyPair)).getUserTrades();
-                for(int i=userTrades.size()-1;i>=0;i--) {
+                for (int i = userTrades.size() - 1; i >= 0; i--) {
                     UserTrade userTrade = userTrades.get(i);
-                    if(Order.OrderType.BID.equals(userTrade.getType())){
+                    if (Order.OrderType.BID.equals(userTrade.getType())) {
                         ThreadOrderPlaceAsk threadOrderPlaceAsk = new ThreadOrderPlaceAsk(entry, exchangeMetaData, userTrade, tradeService);
                         threadOrderPlaceAsks.add(threadOrderPlaceAsk);
                         break;
@@ -78,10 +78,9 @@ public class BalanceScore {
     }
 
     /**
-     * @return
-     * Метод возвращает кол-во возможных покупок, на которых хватает баланса
+     * @return Метод возвращает кол-во возможных покупок, на которых хватает баланса
      */
-    private int getAvailableBidOrderCount(){
+    private int getAvailableBidOrderCount() {
         int bidOrderCount = 0;
         BigDecimal minRate = Config.getMinRate();
         bidOrderCount = availableBTC.divide(minRate, RoundingMode.HALF_DOWN).intValue();
@@ -90,27 +89,26 @@ public class BalanceScore {
     }
 
     /**
-     * @param rankPairList
-     * Расстановка ордеров на покупку, на основании рангов пар и доступного баланса
+     * @param rankPairList Расстановка ордеров на покупку, на основании рангов пар и доступного баланса
      */
-    public void orderPlaceBid(List<RankPair> rankPairList){
+    public void orderPlaceBid(List<RankPair> rankPairList) {
         int bidOrderCount = getAvailableBidOrderCount();
-        if (bidOrderCount==0) return;
-        for(RankPair rankPair : rankPairList){
+        if (bidOrderCount == 0) return;
+        for (RankPair rankPair : rankPairList) {
             double rank = rankPair.getRank();
-            if(rank>Config.getMinRankForBid()){
+            if (rank > Config.getMinRankForBid()) {
                 Ticker ticker = rankPair.getTicker();
                 CurrencyPair currencyPair = rankPair.getCurrencyPair();
                 CurrencyPairMetaData currencyPairMetaData = rankPair.getCurrencyPairMetaData();
-                ThreadOrderPlaceBid threadOrderPlaceBid = new ThreadOrderPlaceBid(currencyPair,ticker,rank,currencyPairMetaData,tradeService);
+                ThreadOrderPlaceBid threadOrderPlaceBid = new ThreadOrderPlaceBid(currencyPair, ticker, rank, currencyPairMetaData, tradeService);
                 this.threadOrderPlaceBids.add(threadOrderPlaceBid);
-            } else{
+            } else {
                 waitThread(threadOrderPlaceAsks);
                 System.out.println();
                 return;
             }
-            bidOrderCount-=1;
-            if(bidOrderCount==0) {
+            bidOrderCount -= 1;
+            if (bidOrderCount == 0) {
                 waitThread(threadOrderPlaceAsks);
                 System.out.println("-");
                 return;
@@ -122,12 +120,12 @@ public class BalanceScore {
      * Отмена покупки монет. То, что мы не успели купить, нужно отменить.
      * Новое ранирование выберет новые пары.
      */
-    public void orderBidCancel(){
+    public void orderBidCancel() {
         // Уменьшил время ожидания до 30 секунд (на следующий прогон) если покупки не будет, то ждать нечего
         Config.setSecondsWait(Config.getSecondsWaitMin());
         try {
             List<LimitOrder> openOrders = tradeService.getOpenOrders().getOpenOrders();
-            for(LimitOrder limitOrder : openOrders){
+            for (LimitOrder limitOrder : openOrders) {
                 ThreadOrderCancelBid threadOrderCancelBid = new ThreadOrderCancelBid(limitOrder, tradeService);
                 this.ThreadOrderCancelBids.add(threadOrderCancelBid);
             }
@@ -140,14 +138,12 @@ public class BalanceScore {
 
     /**
      * @param list список
-     * @param <T>
-     *     Метод используется для ожидаения потоков из списка.
-     *     Ждем завершения последнего и идем дальше.
+     * @param <T>  Метод используется для ожидаения потоков из списка.
+     *             Ждем завершения последнего и идем дальше.
      */
-    private  <T> void waitThread(LinkedList<T> list)   {
-        for(T thread:  list) {
-            if(((Thread) thread).isAlive())
-            {
+    private <T> void waitThread(LinkedList<T> list) {
+        for (T thread : list) {
+            if (((Thread) thread).isAlive()) {
                 try {
                     ((Thread) thread).join();
                 } catch (InterruptedException e) {
@@ -162,7 +158,7 @@ public class BalanceScore {
     /**
      * Метод удаляет пары долгого хранения
      */
-    private void removeLongStorage(){
+    private void removeLongStorage() {
         CRUD_LongStoragePair impl = new CRUD();
         List<Currency> currencyList = null;
         try {
@@ -178,7 +174,7 @@ public class BalanceScore {
     /**
      * Метод оставляет торговые пары только с BTC
      */
-    private void onlyBTC(){
+    private void onlyBTC() {
         List<Currency> currencyList = new ArrayList<>();
         for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
             // Если по паре с BTC торговая информация отсутствует, то мы выкидываем пару
@@ -198,7 +194,7 @@ public class BalanceScore {
      * Метод убирает из списка пар баланса те, по которым не достаточно средств для продажи.
      * Их мы можем докупать.
      */
-    private void enoughForSale(){
+    private void enoughForSale() {
         List<Currency> currencyList = new ArrayList<>();
         for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
             // Если по паре недостаточно средств, то выкидываем ее
@@ -208,7 +204,7 @@ public class BalanceScore {
             CurrencyPairMetaData currencyPairMetaData = currencyPairs.get(currencyPair);
             BigDecimal available = entry.getValue().getAvailable();
             BigDecimal minAmount = currencyPairMetaData.getMinimumAmount();
-            if(available.compareTo(minAmount)<0){
+            if (available.compareTo(minAmount) < 0) {
                 currencyList.add(currency);
             }
         }
@@ -217,13 +213,12 @@ public class BalanceScore {
 
 
     /**
-     * @param currencyPairs
-     * Удаляем из списка монеты, которые мы продаем (докупать их не нужно)
+     * @param currencyPairs Удаляем из списка монеты, которые мы продаем (докупать их не нужно)
      */
     public void removePairForSale(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs) {
         // Получил список продаваемых монет на этом круге цикла
         LinkedList<ThreadOrderPlaceAsk> listThreadTicker = getThreadOrderPlaceAsks();
-        for(ThreadOrderPlaceAsk threadOrderPlaceAsk: listThreadTicker){
+        for (ThreadOrderPlaceAsk threadOrderPlaceAsk : listThreadTicker) {
             currencyPairs.keySet().remove(threadOrderPlaceAsk.getCurrencyPair());
         }
     }

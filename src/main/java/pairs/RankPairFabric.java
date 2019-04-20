@@ -14,9 +14,8 @@ public class RankPairFabric {
 
     /**
      * @param currencyPairs список Торговых пар
-     * @param binance переменная биржи
-     * @return
-     * Создаем список пар с рангами
+     * @param binance       переменная биржи
+     * @return Создаем список пар с рангами
      */
     public List<RankPair> generateRankPairList(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs, Exchange binance) {
         MarketDataService marketDataService = binance.getMarketDataService();

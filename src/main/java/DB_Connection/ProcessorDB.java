@@ -7,19 +7,19 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 
-
-public class ProcessorDB {
+class ProcessorDB {
     private Connection connection;
-    public ProcessorDB() throws SQLException{
+
+    ProcessorDB() throws SQLException {
         Driver driver = new Driver();
         DriverManager.registerDriver(driver);
     }
 
-    public Connection getConnection(String url, String username, String password) throws SQLException {
-        if(connection != null){
+    Connection getConnection(String url, String username, String password) throws SQLException {
+        if (connection != null) {
             return connection;
         }
-        connection = DriverManager.getConnection(url, username,password);
+        connection = DriverManager.getConnection(url, username, password);
         return connection;
     }
 }

@@ -31,7 +31,7 @@ public class ThreadOrderPlaceAsk extends Thread {
         return currencyPair;
     }
 
-    ThreadOrderPlaceAsk(Map.Entry<Currency, Balance> entry, ExchangeMetaData exchangeMetaData, UserTrade userTrade, TradeService tradeService){
+    ThreadOrderPlaceAsk(Map.Entry<Currency, Balance> entry, ExchangeMetaData exchangeMetaData, UserTrade userTrade, TradeService tradeService) {
         this.currencyPair = new CurrencyPair(entry.getKey(), Config.getCurrency_for_sale());
         this.currencyPairMetaData = exchangeMetaData.getCurrencyPairs().get(currencyPair);
         this.balance = entry.getValue();
@@ -41,22 +41,21 @@ public class ThreadOrderPlaceAsk extends Thread {
         this.start();
     }
 
-    public void run()
-    {
+    public void run() {
         // Считаем цену продажи (с округлением вверх)
         BigDecimal priceForSale = userTrade.getPrice().multiply(profitPercent);
-        priceForSale = priceForSale.setScale(currencyPairMetaData.getPriceScale(),BigDecimal.ROUND_UP);
+        priceForSale = priceForSale.setScale(currencyPairMetaData.getPriceScale(), BigDecimal.ROUND_UP);
         // Считаем стоимость в битках, будем сранивать с минимальной стоимостью в битках
         BigDecimal amount = balance.getAvailable();
         BigDecimal amountInBTC = amount.multiply(priceForSale);
         BigDecimal minNotional = Config.getMinNotional();
         // По количеству продаваемых монет делаем округление вниз до необходимого кол-ва знаков после запятой
         int amountScale = currencyPairMetaData.getMinimumAmount().scale();
-        amount = amount.setScale(amountScale,BigDecimal.ROUND_DOWN);
-        if((amountInBTC.compareTo(minNotional)>0)) {
+        amount = amount.setScale(amountScale, BigDecimal.ROUND_DOWN);
+        if ((amountInBTC.compareTo(minNotional) > 0)) {
             Date datePlace = userTrade.getTimestamp();
             LimitOrder ask = new LimitOrder(Order.OrderType.ASK, amount, currencyPair, null, null, priceForSale);
-            System.out.println("Продаю с: " + datePlace + " Валюту " +currencyPair + " по " + priceForSale);
+            System.out.println("Продаю с: " + datePlace + " Валюту " + currencyPair + " по " + priceForSale);
             try {
                 tradeService.placeLimitOrder(ask);
                 this.makeTrade = true;

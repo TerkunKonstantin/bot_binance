@@ -12,7 +12,7 @@ public class ThreadOrderCancelBid extends Thread {
     private LimitOrder limitOrder;
     private TradeService tradeService;
 
-    ThreadOrderCancelBid(LimitOrder limitOrder, TradeService tradeService){
+    ThreadOrderCancelBid(LimitOrder limitOrder, TradeService tradeService) {
         this.limitOrder = limitOrder;
         this.tradeService = tradeService;
         if (limitOrder.getType().equals(Order.OrderType.BID)) this.start();

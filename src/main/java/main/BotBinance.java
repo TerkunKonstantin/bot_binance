@@ -23,14 +23,14 @@ class BotBinance {
     private Exchange binance;
     private Map<CurrencyPair, CurrencyPairMetaData> currencyPairs;
 
-    BotBinance(String name, String apiKeyB, String secretKeyB){
-        binance = ExchangeFactory.INSTANCE.createExchange(name,apiKeyB,secretKeyB);
+    BotBinance(String name, String apiKeyB, String secretKeyB) {
+        binance = ExchangeFactory.INSTANCE.createExchange(name, apiKeyB, secretKeyB);
     }
 
     /**
      * Метод получает пары с биржи. Оставляет только торгуемые с BTC. Убирает пары долгого хранения.
      */
-    void takeCurrencyPairs(){
+    void takeCurrencyPairs() {
         //Получил список торговых пар
         ExchangeMetaData exchangeMetaData = binance.getExchangeMetaData();
         Map<CurrencyPair, CurrencyPairMetaData> currencyPairMetaDataMap = exchangeMetaData.getCurrencyPairs();
@@ -67,16 +67,16 @@ class BotBinance {
             balanceScore.removePairForSale(currencyPairsForSale);
 
             LinkedList<ThreadOrderPlaceAsk> listThreadTicker = balanceScore.getThreadOrderPlaceAsks();
-            for(ThreadOrderPlaceAsk threadOrderPlaceAsk: listThreadTicker){
+            for (ThreadOrderPlaceAsk threadOrderPlaceAsk : listThreadTicker) {
                 currencyPairs.keySet().remove(threadOrderPlaceAsk.getCurrencyPair());
             }
 
             // Прошелся по списку торговых пар на покупку и создал список объектов рангов
             RankPairFabric rankPairFabric = new RankPairFabric();
-            List<RankPair> rankPairList = rankPairFabric.generateRankPairList(currencyPairsForSale,binance);
+            List<RankPair> rankPairList = rankPairFabric.generateRankPairList(currencyPairsForSale, binance);
 
             // Рассчитал для пар ранги
-            for(RankPair rankPair:rankPairList){
+            for (RankPair rankPair : rankPairList) {
                 rankPair.calculateRank();
             }
 
@@ -93,8 +93,7 @@ class BotBinance {
             // Делаем отмену ордеров в пункте выше
             balanceScore.orderBidCancel();
 
-        }
-        catch (InterruptedException | IOException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -103,9 +102,9 @@ class BotBinance {
     /**
      * Метод оставляет только пары торгуемые с BTC
      */
-    private void onlyBTC(){
+    private void onlyBTC() {
         Iterator<Map.Entry<CurrencyPair, CurrencyPairMetaData>> it = currencyPairs.entrySet().iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             Map.Entry<CurrencyPair, CurrencyPairMetaData> item;
             item = it.next();
             if (!(item.getKey().counter.equals(Currency.BTC))) {
@@ -115,13 +114,12 @@ class BotBinance {
     }
 
     /**
-     * @throws SQLException
-     * Метод убирает пары долгого хранения (то что держу "в долгую")
+     * @throws SQLException Метод убирает пары долгого хранения (то что держу "в долгую")
      */
     private void removeLongStorageDBForPair() throws SQLException {
         CRUD_LongStoragePair impl = new CRUD();
         List<CurrencyPair> currencyPairList = impl.SelectPairs();
-        for(CurrencyPair currencyPair:currencyPairList){
+        for (CurrencyPair currencyPair : currencyPairList) {
             currencyPairs.entrySet().removeIf(e -> currencyPair.equals(e.getKey()));
         }
     }

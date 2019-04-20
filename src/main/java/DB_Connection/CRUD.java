@@ -20,10 +20,10 @@ public class CRUD implements CRUD_LongStoragePair {
         String query = "select * from schema_for_test.long_storage_pairs";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         ResultSet resultSet = preparedStatement.executeQuery();
-        while (resultSet.next()){
+        while (resultSet.next()) {
             String currency_1 = resultSet.getString("currency_1");
             String currency_2 = resultSet.getString("currency_2");
-            CurrencyPair currencyPair = new CurrencyPair(currency_1,currency_2);
+            CurrencyPair currencyPair = new CurrencyPair(currency_1, currency_2);
             currencyPairList.add(currencyPair);
         }
         preparedStatement.close();
@@ -39,7 +39,7 @@ public class CRUD implements CRUD_LongStoragePair {
         String query = "select * from schema_for_test.long_storage_pairs";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         ResultSet resultSet = preparedStatement.executeQuery();
-        while (resultSet.next()){
+        while (resultSet.next()) {
             String currency_1 = resultSet.getString("currency_1");
             Currency currency = new Currency(currency_1);
             currencyList.add(currency);

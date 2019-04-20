@@ -11,7 +11,7 @@ public class StatServiceApp implements Callback<StatServiceAnsver> {
     private static final String BASE_URL = "http://128.71.219.154:8090";
     private StatServiceApi serviceApiAPI;
 
-    public StatServiceApp (){
+    public StatServiceApp() {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
@@ -27,7 +27,7 @@ public class StatServiceApp implements Callback<StatServiceAnsver> {
 
     @Override
     public void onResponse(Call<StatServiceAnsver> call, Response<StatServiceAnsver> response) {
-        if(response.isSuccessful()) {
+        if (response.isSuccessful()) {
             StatServiceAnsver answer = response.body();
             System.out.println(answer);
         } else {

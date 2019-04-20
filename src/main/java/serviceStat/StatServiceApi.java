@@ -7,5 +7,5 @@ import retrofit2.http.Query;
 public interface StatServiceApi {
 
     @GET("/queue")
-    Call<StatServiceAnsver> sendData(@Query("symbol") String symbol, @Query("price") String  price);
+    Call<StatServiceAnsver> sendData(@Query("symbol") String symbol, @Query("price") String price);
 }

@@ -24,7 +24,7 @@ public class ThreadOrderPlaceBid extends Thread {
     private static StatServiceApp controller = new StatServiceApp();
 
 
-    ThreadOrderPlaceBid(CurrencyPair currencyPair, Ticker ticker, double rank, CurrencyPairMetaData currencyPairMetaData, TradeService tradeService){
+    ThreadOrderPlaceBid(CurrencyPair currencyPair, Ticker ticker, double rank, CurrencyPairMetaData currencyPairMetaData, TradeService tradeService) {
         this.currencyPair = currencyPair;
         this.ticker = ticker;
         this.tradeService = tradeService;
@@ -43,15 +43,15 @@ public class ThreadOrderPlaceBid extends Thread {
         Integer priceScale = currencyPairMetaData.getPriceScale();
         BigDecimal step = BigDecimal.ONE.movePointLeft(priceScale);
         bidWithStep = bid.add(step);
-        BigDecimal askBidDifferenceIndexBD = bidWithStep.divide(bid,  RoundingMode.HALF_UP).multiply(new BigDecimal ("100")).subtract(new BigDecimal ("100"));
-        if(askBidDifferenceIndexBD.compareTo(Config.getMaxLostProfitFromOrderStep())>0){
+        BigDecimal askBidDifferenceIndexBD = bidWithStep.divide(bid, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).subtract(new BigDecimal("100"));
+        if (askBidDifferenceIndexBD.compareTo(Config.getMaxLostProfitFromOrderStep()) > 0) {
             priceForBuy = bid;
         } else {
             priceForBuy = bidWithStep;
         }
         LimitOrder bidOrder = new LimitOrder(Order.OrderType.BID, amount, currencyPair, null, null, priceForBuy);
-        System.out.println("Покупаю с: " + date + " Валюту " +currencyPair + " по " + priceForBuy + " с рейтингом " + rank);
-        controller.start(currencyPair.base.toString() + currencyPair.counter.toString(),priceForBuy.toString());
+        System.out.println("Покупаю с: " + date + " Валюту " + currencyPair + " по " + priceForBuy + " с рейтингом " + rank);
+        controller.start(currencyPair.base.toString() + currencyPair.counter.toString(), priceForBuy.toString());
         /*
         try {
             tradeService.placeLimitOrder(bidOrder);

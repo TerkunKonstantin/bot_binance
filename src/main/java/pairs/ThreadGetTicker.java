@@ -16,14 +16,13 @@ public class ThreadGetTicker extends Thread {
     CurrencyPair currencyPair;
     OrderBook orderBook;
 
-    ThreadGetTicker(Map.Entry<CurrencyPair, CurrencyPairMetaData> entry, MarketDataService marketDataService){
+    ThreadGetTicker(Map.Entry<CurrencyPair, CurrencyPairMetaData> entry, MarketDataService marketDataService) {
         this.currencyPair = entry.getKey();
         this.marketDataService = marketDataService;
         this.start();
     }
 
-    public void run()
-    {
+    public void run() {
         try {
             this.ticker = marketDataService.getTicker(currencyPair);
             this.orderBook = marketDataService.getOrderBook(currencyPair);
