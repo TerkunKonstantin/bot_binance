@@ -41,18 +41,21 @@ public class BalanceScore {
         updateBalance = new HashMap<>(balanceMap);
         availableBTC = updateBalance.get(Currency.BTC).getAvailable();
         // Убрал пары долгого хранения из списка продаж
-        this.RemoveLongStorage();
+        this.removeLongStorage();
         // Оставил только те пары, которые торгуются с BTC
-        this.OnlyBTC();
+        this.onlyBTC();
         // Посмотреть по каким парам достаточно для продажи, остальные убрать (Проверку делаю по полю minAmount)
-        // TODO обработка нулпоинтерэкзепшен, если будет перед OnlyBTC до этого момента (!Обязательно после OnlyBTC!)
-        this.EnoughForSale();
+        // TODO обработка нулпоинтерэкзепшен, если будет перед onlyBTC до этого момента (!Обязательно после onlyBTC!)
+        this.enoughForSale();
     }
 
     public LinkedList<ThreadOrderPlaceAsk> getThreadOrderPlaceAsks() {
         return threadOrderPlaceAsks;
     }
 
+    /**
+     * Расставляем оредера на продажу
+     */
     public void orderPlaceAsk(){
         // бегу по парам баланса и запускаю поток на расстановку ордера, передаю ему историю торгов
         for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
@@ -71,9 +74,13 @@ public class BalanceScore {
                 e.printStackTrace();
             }
         }
-        WaitThread(threadOrderPlaceAsks);
+        waitThread(threadOrderPlaceAsks);
     }
 
+    /**
+     * @return
+     * Метод возвращает кол-во возможных покупок, на которых хватает баланса
+     */
     private int getAvailableBidOrderCount(){
         int bidOrderCount = 0;
         BigDecimal minRate = Config.getMinRate();
@@ -82,6 +89,10 @@ public class BalanceScore {
         return 4;
     }
 
+    /**
+     * @param rankPairList
+     * Расстановка ордеров на покупку, на основании рангов пар и доступного баланса
+     */
     public void orderPlaceBid(List<RankPair> rankPairList){
         int bidOrderCount = getAvailableBidOrderCount();
         if (bidOrderCount==0) return;
@@ -94,19 +105,23 @@ public class BalanceScore {
                 ThreadOrderPlaceBid threadOrderPlaceBid = new ThreadOrderPlaceBid(currencyPair,ticker,rank,currencyPairMetaData,tradeService);
                 this.threadOrderPlaceBids.add(threadOrderPlaceBid);
             } else{
-                WaitThread(threadOrderPlaceAsks);
+                waitThread(threadOrderPlaceAsks);
                 System.out.println();
                 return;
             }
             bidOrderCount-=1;
             if(bidOrderCount==0) {
-                WaitThread(threadOrderPlaceAsks);
+                waitThread(threadOrderPlaceAsks);
                 System.out.println("-");
                 return;
             }
         }
     }
 
+    /**
+     * Отмена покупки монет. То, что мы не успели купить, нужно отменить.
+     * Новое ранирование выберет новые пары.
+     */
     public void orderBidCancel(){
         // Уменьшил время ожидания до 30 секунд (на следующий прогон) если покупки не будет, то ждать нечего
         Config.setSecondsWait(Config.getSecondsWaitMin());
@@ -116,14 +131,20 @@ public class BalanceScore {
                 ThreadOrderCancelBid threadOrderCancelBid = new ThreadOrderCancelBid(limitOrder, tradeService);
                 this.ThreadOrderCancelBids.add(threadOrderCancelBid);
             }
-            WaitThread(ThreadOrderCancelBids);
+            waitThread(ThreadOrderCancelBids);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
 
-    private  <T> void WaitThread(LinkedList<T> list)   {
+    /**
+     * @param list список
+     * @param <T>
+     *     Метод используется для ожидаения потоков из списка.
+     *     Ждем завершения последнего и идем дальше.
+     */
+    private  <T> void waitThread(LinkedList<T> list)   {
         for(T thread:  list) {
             if(((Thread) thread).isAlive())
             {
@@ -138,7 +159,10 @@ public class BalanceScore {
     }
 
 
-    private void RemoveLongStorage(){
+    /**
+     * Метод удаляет пары долгого хранения
+     */
+    private void removeLongStorage(){
         CRUD_LongStoragePair impl = new CRUD();
         List<Currency> currencyList = null;
         try {
@@ -151,7 +175,10 @@ public class BalanceScore {
     }
 
 
-    private void  OnlyBTC(){
+    /**
+     * Метод оставляет торговые пары только с BTC
+     */
+    private void onlyBTC(){
         List<Currency> currencyList = new ArrayList<>();
         for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
             // Если по паре с BTC торговая информация отсутствует, то мы выкидываем пару
@@ -167,7 +194,11 @@ public class BalanceScore {
     }
 
 
-    private void EnoughForSale(){
+    /**
+     * Метод убирает из списка пар баланса те, по которым не достаточно средств для продажи.
+     * Их мы можем докупать.
+     */
+    private void enoughForSale(){
         List<Currency> currencyList = new ArrayList<>();
         for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
             // Если по паре недостаточно средств, то выкидываем ее
@@ -185,7 +216,11 @@ public class BalanceScore {
     }
 
 
-    public void RemovePairforSale(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs) {
+    /**
+     * @param currencyPairs
+     * Удаляем из списка монеты, которые мы продаем (докупать их не нужно)
+     */
+    public void removePairForSale(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs) {
         // Получил список продаваемых монет на этом круге цикла
         LinkedList<ThreadOrderPlaceAsk> listThreadTicker = getThreadOrderPlaceAsks();
         for(ThreadOrderPlaceAsk threadOrderPlaceAsk: listThreadTicker){

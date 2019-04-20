@@ -12,8 +12,13 @@ import java.util.Map;
 
 public class RankPairFabric {
 
-
-    public List<RankPair> GenerateRankPairList(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs, Exchange binance) {
+    /**
+     * @param currencyPairs список Торговых пар
+     * @param binance переменная биржи
+     * @return
+     * Создаем список пар с рангами
+     */
+    public List<RankPair> generateRankPairList(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs, Exchange binance) {
         MarketDataService marketDataService = binance.getMarketDataService();
         // Потоками получил по каждой паре список ордеров и тикет
         LinkedList<ThreadGetTicker> threadGetTickerLinkedList = new LinkedList<>();
@@ -22,7 +27,7 @@ public class RankPairFabric {
             ThreadGetTicker threadGetTicker = new ThreadGetTicker(entry, marketDataService);
             threadGetTickerLinkedList.add(threadGetTicker);
         }
-        WaitThread(threadGetTickerLinkedList);
+        waitThread(threadGetTickerLinkedList);
 
         // Создал объекты рангов и вернул список
         List<RankPair> rankPairList = new ArrayList<>();
@@ -38,7 +43,7 @@ public class RankPairFabric {
     }
 
     // TODO использую метод в двух местах, может его нужно вынести куда-то и сделать обращение единым, а не дублировать в классах
-    private <T> void WaitThread(LinkedList<T> list) {
+    private <T> void waitThread(LinkedList<T> list) {
         for (T thread : list) {
             if (((Thread) thread).isAlive()) {
                 try {

@@ -27,20 +27,30 @@ class BotBinance {
         binance = ExchangeFactory.INSTANCE.createExchange(name,apiKeyB,secretKeyB);
     }
 
-    void TakeCurrencyPairs(){
+    /**
+     * Метод получает пары с биржи. Оставляет только торгуемые с BTC. Убирает пары долгого хранения.
+     */
+    void takeCurrencyPairs(){
         //Получил список торговых пар
         ExchangeMetaData exchangeMetaData = binance.getExchangeMetaData();
         Map<CurrencyPair, CurrencyPairMetaData> currencyPairMetaDataMap = exchangeMetaData.getCurrencyPairs();
         currencyPairs = new HashMap<>(currencyPairMetaDataMap);
-        this.OnlyBTC();
+        this.onlyBTC();
         //Ограничил торги по парам которые мне не нравятся (убираю то, что у меня на долгом хранении)
         try {
-            this.RemoveLongStorageDB_forPair();
+            this.removeLongStorageDBForPair();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Метод реализует функцию торговли по следующему алгоритму:
+     * Получение баланса
+     * Продажа
+     * Ранжирование пар
+     * Попкупка
+     */
     void Trade() {
         try {
 
@@ -54,7 +64,7 @@ class BotBinance {
             balanceScore.orderPlaceAsk();
 
             // Удалил из списка монет все монеты, которые поставил на покупку
-            balanceScore.RemovePairforSale(currencyPairsForSale);
+            balanceScore.removePairForSale(currencyPairsForSale);
 
             LinkedList<ThreadOrderPlaceAsk> listThreadTicker = balanceScore.getThreadOrderPlaceAsks();
             for(ThreadOrderPlaceAsk threadOrderPlaceAsk: listThreadTicker){
@@ -63,11 +73,11 @@ class BotBinance {
 
             // Прошелся по списку торговых пар на покупку и создал список объектов рангов
             RankPairFabric rankPairFabric = new RankPairFabric();
-            List<RankPair> rankPairList = rankPairFabric.GenerateRankPairList(currencyPairsForSale,binance);
+            List<RankPair> rankPairList = rankPairFabric.generateRankPairList(currencyPairsForSale,binance);
 
             // Рассчитал для пар ранги
             for(RankPair rankPair:rankPairList){
-                rankPair.CalculateRank();
+                rankPair.calculateRank();
             }
 
             // Отсортировал по рангам
@@ -90,8 +100,10 @@ class BotBinance {
     }
 
 
-
-    private void OnlyBTC(){
+    /**
+     * Метод оставляет только пары торгуемые с BTC
+     */
+    private void onlyBTC(){
         Iterator<Map.Entry<CurrencyPair, CurrencyPairMetaData>> it = currencyPairs.entrySet().iterator();
         while(it.hasNext()) {
             Map.Entry<CurrencyPair, CurrencyPairMetaData> item;
@@ -102,7 +114,11 @@ class BotBinance {
         }
     }
 
-    private void RemoveLongStorageDB_forPair() throws SQLException {
+    /**
+     * @throws SQLException
+     * Метод убирает пары долгого хранения (то что держу "в долгую")
+     */
+    private void removeLongStorageDBForPair() throws SQLException {
         CRUD_LongStoragePair impl = new CRUD();
         List<CurrencyPair> currencyPairList = impl.SelectPairs();
         for(CurrencyPair currencyPair:currencyPairList){

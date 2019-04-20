@@ -32,14 +32,22 @@ public class RankPair {
     }
 
 
-    public void CalculateRank() {
-        if (ConfigIndexParams.getVolumeIndexActivity()) CalculateVolumeIndex();
-        if (ConfigIndexParams.getAskBidDifferenceIndexActivity()) CalculateAskBidDifferenceIndex();
-        if (ConfigIndexParams.getPositionIndexActivity()) CalculatePositionIndex();
+    /**
+     * Расчет ранга для пары
+     */
+    public void calculateRank() {
+        if (ConfigIndexParams.getVolumeIndexActivity()) calculateVolumeIndex();
+        if (ConfigIndexParams.getAskBidDifferenceIndexActivity()) calculateAskBidDifferenceIndex();
+        if (ConfigIndexParams.getPositionIndexActivity()) calculatePositionIndex();
         // индекс доминирования биткоина - хочу тянуть откуда-то (хорошая штука), писать в БД и считать его движение вверх или вниз
     }
 
-    private void CalculatePositionIndex() {
+    /**
+     * Расчет индекса относительного положения на графике.
+     * Чем ниже, тем индекс ближе к 1
+     * Чем выше, тем индекс ближе к 0
+     */
+    private void calculatePositionIndex() {
         if (rank <= 0) return;
         BigDecimal high = ticker.getHigh();
         BigDecimal low = ticker.getLow();
@@ -55,7 +63,11 @@ public class RankPair {
         }
     }
 
-    private void CalculateAskBidDifferenceIndex() {
+    /**
+     * Расчет индекса разницы цены на покупку и продажу.
+     * Чем больше процент разницы, тем выше индекс
+     */
+    private void calculateAskBidDifferenceIndex() {
         if (rank <= 0) return;
         BigDecimal ask = ticker.getAsk();
         BigDecimal bid = ticker.getBid();
@@ -68,7 +80,11 @@ public class RankPair {
         this.rank = rank * askBidDifferenceIndex;
     }
 
-    private void CalculateVolumeIndex() {
+    /**
+     * Расчет индекса объема ордеров в стаканах.
+     * Чем больше у нас объем ордеров на покупку, тем выше индекс
+     */
+    private void calculateVolumeIndex() {
         if (rank <= 0) return;
         BigDecimal limitPercentAsk = ConfigIndexParams.getVolumeIndexLimitPercent().movePointLeft(2).add(BigDecimal.ONE);
         BigDecimal limitPercentBid = BigDecimal.ONE.subtract(ConfigIndexParams.getVolumeIndexLimitPercent().movePointLeft(2));

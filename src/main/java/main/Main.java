@@ -6,7 +6,7 @@ public class Main {
 
     public static void main(String[] args) {
         BotBinance botBinance = new BotBinance(BinanceExchange.class.getName(),Config.getApiKeyB(),Config.getSecretKeyB());
-        botBinance.TakeCurrencyPairs();
+        botBinance.takeCurrencyPairs();
         while(true){
             botBinance.Trade();
         }
