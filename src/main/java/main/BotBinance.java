@@ -1,14 +1,17 @@
 package main;
 
+import DB_Connection.CRUD;
+import DB_Connection.CRUD_LongStoragePair;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
+import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
-import pairs.CurrencyPairWork;
+import org.knowm.xchange.dto.meta.ExchangeMetaData;
 import pairs.RankPair;
-import restrictions.PairRestrictions;
+import pairs.RankPairFabric;
 import sale_block.BalanceScore;
-import serviceStat.StatServiceApp;
+import sale_block.ThreadOrderPlaceAsk;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -21,32 +24,28 @@ class BotBinance {
     private Map<CurrencyPair, CurrencyPairMetaData> currencyPairs;
 
     BotBinance(String name, String apiKeyB, String secretKeyB){
-        this.binance = ExchangeFactory.INSTANCE.createExchange(name,apiKeyB,secretKeyB);
+        binance = ExchangeFactory.INSTANCE.createExchange(name,apiKeyB,secretKeyB);
     }
 
     void TakeCurrencyPairs(){
         //Получил список торговых пар
-       this.currencyPairs = CurrencyPairWork.CurrencyPairGet(binance);
-        //Ограничил торги только по BTC
-        PairRestrictions.OnlyBTC(currencyPairs);
-        //TODO вынести этот метод в отдельный класс (работать с его объектом, как это сделано для балансов)
+        ExchangeMetaData exchangeMetaData = binance.getExchangeMetaData();
+        Map<CurrencyPair, CurrencyPairMetaData> currencyPairMetaDataMap = exchangeMetaData.getCurrencyPairs();
+        currencyPairs = new HashMap<>(currencyPairMetaDataMap);
+        this.OnlyBTC();
         //Ограничил торги по парам которые мне не нравятся (убираю то, что у меня на долгом хранении)
         try {
-            PairRestrictions.RemoveLongStorageDB_forPair(currencyPairs);
+            this.RemoveLongStorageDB_forPair();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    void CreateStatisticRetrofit() {
-        StatServiceApp controller = new StatServiceApp();
     }
 
     void Trade() {
         try {
 
             // Обновляю список валютных вар для работы/ранжирования их
-            Map<CurrencyPair, CurrencyPairMetaData> currencyPairsForSale = CurrencyPairWork.CurrencyPairForSale(currencyPairs);
+            Map<CurrencyPair, CurrencyPairMetaData> currencyPairsForSale = new HashMap<>(currencyPairs);
 
             // Создал объект по работе с балансом
             BalanceScore balanceScore = new BalanceScore(binance);
@@ -55,10 +54,16 @@ class BotBinance {
             balanceScore.orderPlaceAsk();
 
             // Удалил из списка монет все монеты, которые поставил на покупку
-            PairRestrictions.RemovePairforSale(balanceScore,currencyPairsForSale);
+            balanceScore.RemovePairforSale(currencyPairsForSale);
+
+            LinkedList<ThreadOrderPlaceAsk> listThreadTicker = balanceScore.getThreadOrderPlaceAsks();
+            for(ThreadOrderPlaceAsk threadOrderPlaceAsk: listThreadTicker){
+                currencyPairs.keySet().remove(threadOrderPlaceAsk.getCurrencyPair());
+            }
 
             // Прошелся по списку торговых пар на покупку и создал список объектов рангов
-            List<RankPair> rankPairList = RankPair.GenerateRankPairList(currencyPairsForSale,binance);
+            RankPairFabric rankPairFabric = new RankPairFabric();
+            List<RankPair> rankPairList = rankPairFabric.GenerateRankPairList(currencyPairsForSale,binance);
 
             // Рассчитал для пар ранги
             for(RankPair rankPair:rankPairList){
@@ -81,6 +86,27 @@ class BotBinance {
         }
         catch (InterruptedException | IOException e) {
             e.printStackTrace();
+        }
+    }
+
+
+
+    private void OnlyBTC(){
+        Iterator<Map.Entry<CurrencyPair, CurrencyPairMetaData>> it = currencyPairs.entrySet().iterator();
+        while(it.hasNext()) {
+            Map.Entry<CurrencyPair, CurrencyPairMetaData> item;
+            item = it.next();
+            if (!(item.getKey().counter.equals(Currency.BTC))) {
+                it.remove();
+            }
+        }
+    }
+
+    private void RemoveLongStorageDB_forPair() throws SQLException {
+        CRUD_LongStoragePair impl = new CRUD();
+        List<CurrencyPair> currencyPairList = impl.SelectPairs();
+        for(CurrencyPair currencyPair:currencyPairList){
+            currencyPairs.entrySet().removeIf(e -> currencyPair.equals(e.getKey()));
         }
     }
 }

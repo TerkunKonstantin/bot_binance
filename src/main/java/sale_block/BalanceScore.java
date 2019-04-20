@@ -1,5 +1,7 @@
 package sale_block;
 
+import DB_Connection.CRUD;
+import DB_Connection.CRUD_LongStoragePair;
 import main.Config;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.binance.service.BinanceTradeHistoryParams;
@@ -12,55 +14,39 @@ import org.knowm.xchange.dto.meta.CurrencyPairMetaData;
 import org.knowm.xchange.dto.meta.ExchangeMetaData;
 import org.knowm.xchange.dto.trade.LimitOrder;
 import org.knowm.xchange.dto.trade.UserTrade;
-import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.trade.TradeService;
 import pairs.RankPair;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.sql.SQLException;
+import java.util.*;
 
 public class BalanceScore {
-    Map<Currency, Balance> updateBalance;
-    ExchangeMetaData exchangeMetaData;
+    private Map<Currency, Balance> updateBalance;
+    private ExchangeMetaData exchangeMetaData;
     private TradeService tradeService;
-    private AccountService accountService;
-    private LinkedList<ThreadOrderPlaceAsk> threadOrderPlaceAsks;
-    private LinkedList<ThreadOrderPlaceBid> threadOrderPlaceBids;
-    private LinkedList<ThreadOrderCancelBid> ThreadOrderCancelBids;
+    private LinkedList<ThreadOrderPlaceAsk> threadOrderPlaceAsks = new LinkedList<>();
+    private LinkedList<ThreadOrderPlaceBid> threadOrderPlaceBids = new LinkedList<>();
+    private LinkedList<ThreadOrderCancelBid> ThreadOrderCancelBids = new LinkedList<>();
     private BigDecimal availableBTC;
 
     public BalanceScore(Exchange binance) throws IOException {
         // получаю необходимые сервисы
-        ExchangeMetaData exchangeMetaData = binance.getExchangeMetaData();
-        TradeService tradeService = binance.getTradeService();
-        AccountService accountService = binance.getAccountService();
-        this.exchangeMetaData = exchangeMetaData;
-        this.tradeService = tradeService;
-        this.accountService = accountService;
+        exchangeMetaData = binance.getExchangeMetaData();
+        tradeService = binance.getTradeService();
         //меняем неизменяемую мапу на обычную
-        Map<Currency, Balance> balanceMap = accountService.getAccountInfo().getWallet().getBalances();
-        Map<Currency, Balance> currencyBalanceForWork = new HashMap<>(balanceMap);
-        this.updateBalance = currencyBalanceForWork;
+        Map<Currency, Balance> balanceMap = binance.getAccountService().getAccountInfo().getWallet().getBalances();
+        updateBalance = new HashMap<>(balanceMap);
         availableBTC = updateBalance.get(Currency.BTC).getAvailable();
-
-        this.threadOrderPlaceAsks = new LinkedList<>();
-        this.threadOrderPlaceBids = new LinkedList<>();
-        this.ThreadOrderCancelBids = new LinkedList<>();
-
         // Убрал пары долгого хранения из списка продаж
-        BalanceRestrictions.RemoveLongStorage(this);
-
+        this.RemoveLongStorage();
         // Оставил только те пары, которые торгуются с BTC
-        BalanceRestrictions.OnlyBTC(this);
-
+        this.OnlyBTC();
         // Посмотреть по каким парам достаточно для продажи, остальные убрать (Проверку делаю по полю minAmount)
         // TODO обработка нулпоинтерэкзепшен, если будет перед OnlyBTC до этого момента (!Обязательно после OnlyBTC!)
-        BalanceRestrictions.EnoughForSale(this);
+        this.EnoughForSale();
     }
 
     public LinkedList<ThreadOrderPlaceAsk> getThreadOrderPlaceAsks() {
@@ -69,7 +55,7 @@ public class BalanceScore {
 
     public void orderPlaceAsk(){
         // бегу по парам баланса и запускаю поток на расстановку ордера, передаю ему историю торгов
-        for (Map.Entry<Currency, Balance> entry : this.updateBalance.entrySet()) {
+        for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
             try {
                 CurrencyPair currencyPair = new CurrencyPair(entry.getKey(), Config.getCurrency_for_sale());
                 List<UserTrade> userTrades = tradeService.getTradeHistory(new BinanceTradeHistoryParams(currencyPair)).getUserTrades();
@@ -91,13 +77,13 @@ public class BalanceScore {
     private int getAvailableBidOrderCount(){
         int bidOrderCount = 0;
         BigDecimal minRate = Config.getMinRate();
-        availableBTC.divide(minRate, RoundingMode.HALF_DOWN).intValue();
-        bidOrderCount = 4;
-        return bidOrderCount;
+        bidOrderCount = availableBTC.divide(minRate, RoundingMode.HALF_DOWN).intValue();
+        //return bidOrderCount;
+        return 4;
     }
 
     public void orderPlaceBid(List<RankPair> rankPairList){
-        int bidOrderCount = this.getAvailableBidOrderCount();
+        int bidOrderCount = getAvailableBidOrderCount();
         if (bidOrderCount==0) return;
         for(RankPair rankPair : rankPairList){
             double rank = rankPair.getRank();
@@ -137,7 +123,7 @@ public class BalanceScore {
     }
 
 
-    private static <T> void WaitThread(LinkedList<T> list)   {
+    private  <T> void WaitThread(LinkedList<T> list)   {
         for(T thread:  list) {
             if(((Thread) thread).isAlive())
             {
@@ -150,4 +136,62 @@ public class BalanceScore {
             }
         }
     }
+
+
+    private void RemoveLongStorage(){
+        CRUD_LongStoragePair impl = new CRUD();
+        List<Currency> currencyList = null;
+        try {
+            currencyList = impl.SelectCurrency();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        assert currencyList != null;
+        updateBalance.keySet().removeAll(currencyList);
+    }
+
+
+    private void  OnlyBTC(){
+        List<Currency> currencyList = new ArrayList<>();
+        for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
+            // Если по паре с BTC торговая информация отсутствует, то мы выкидываем пару
+            Currency currency = entry.getKey();
+            Map<CurrencyPair, CurrencyPairMetaData> currencyPairs = exchangeMetaData.getCurrencyPairs();
+            CurrencyPair currencyPair = new CurrencyPair(currency, Config.getCurrency_for_sale());
+            CurrencyPairMetaData currencyPairMetaData = currencyPairs.get(currencyPair);
+            if (currencyPairMetaData == null) {
+                currencyList.add(currency);
+            }
+        }
+        updateBalance.keySet().removeAll(currencyList);
+    }
+
+
+    private void EnoughForSale(){
+        List<Currency> currencyList = new ArrayList<>();
+        for (Map.Entry<Currency, Balance> entry : updateBalance.entrySet()) {
+            // Если по паре недостаточно средств, то выкидываем ее
+            Currency currency = entry.getKey();
+            Map<CurrencyPair, CurrencyPairMetaData> currencyPairs = exchangeMetaData.getCurrencyPairs();
+            CurrencyPair currencyPair = new CurrencyPair(currency, Config.getCurrency_for_sale());
+            CurrencyPairMetaData currencyPairMetaData = currencyPairs.get(currencyPair);
+            BigDecimal available = entry.getValue().getAvailable();
+            BigDecimal minAmount = currencyPairMetaData.getMinimumAmount();
+            if(available.compareTo(minAmount)<0){
+                currencyList.add(currency);
+            }
+        }
+        updateBalance.keySet().removeAll(currencyList);
+    }
+
+
+    public void RemovePairforSale(Map<CurrencyPair, CurrencyPairMetaData> currencyPairs) {
+        // Получил список продаваемых монет на этом круге цикла
+        LinkedList<ThreadOrderPlaceAsk> listThreadTicker = getThreadOrderPlaceAsks();
+        for(ThreadOrderPlaceAsk threadOrderPlaceAsk: listThreadTicker){
+            currencyPairs.keySet().remove(threadOrderPlaceAsk.getCurrencyPair());
+        }
+    }
+
+
 }
