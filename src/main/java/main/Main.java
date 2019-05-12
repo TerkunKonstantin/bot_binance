@@ -1,14 +1,11 @@
 package main;
 
-import org.knowm.xchange.binance.BinanceExchange;
+import Gui.Gui;
 
 public class Main {
 
     public static void main(String[] args) {
-        BotBinance botBinance = new BotBinance(BinanceExchange.class.getName(), Config.getApiKeyB(), Config.getSecretKeyB());
-        botBinance.takeCurrencyPairs();
-        while (true) {
-            botBinance.Trade();
-        }
+        Gui gui = new Gui();
+        gui.setVisible(true);
     }
 }

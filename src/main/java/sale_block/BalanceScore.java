@@ -2,6 +2,7 @@ package sale_block;
 
 import DB_Connection.CRUD;
 import DB_Connection.CRUD_LongStoragePair;
+import Gui.RangePairListener;
 import main.Config;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.binance.service.BinanceTradeHistoryParams;
@@ -31,6 +32,16 @@ public class BalanceScore {
     private LinkedList<ThreadOrderPlaceBid> threadOrderPlaceBids = new LinkedList<>();
     private LinkedList<ThreadOrderCancelBid> ThreadOrderCancelBids = new LinkedList<>();
     private BigDecimal availableBTC;
+    private List<RangePairListener> rangePairListenerList = new ArrayList<>();
+
+    public void addRangePairListener(RangePairListener listener) {
+        rangePairListenerList.add(listener);
+    }
+
+    private void changeRange(String message) {
+        for (RangePairListener rangePairListener : rangePairListenerList)
+            rangePairListener.changeRange(message);
+    }
 
     public BalanceScore(Exchange binance) throws IOException {
         // получаю необходимые сервисы
@@ -81,11 +92,11 @@ public class BalanceScore {
      * @return Метод возвращает кол-во возможных покупок, на которых хватает баланса
      */
     private int getAvailableBidOrderCount() {
-        int bidOrderCount = 0;
+        int bidOrderCount;
         BigDecimal minRate = Config.getMinRate();
         bidOrderCount = availableBTC.divide(minRate, RoundingMode.HALF_DOWN).intValue();
-        //return bidOrderCount;
-        return 4;
+        return bidOrderCount;
+        //return 4;
     }
 
     /**
@@ -221,6 +232,24 @@ public class BalanceScore {
         for (ThreadOrderPlaceAsk threadOrderPlaceAsk : listThreadTicker) {
             currencyPairs.keySet().remove(threadOrderPlaceAsk.getCurrencyPair());
         }
+    }
+
+
+    private String messageForRangPair(){
+        StringBuilder message = new StringBuilder();
+        for (ThreadOrderPlaceBid threadOrderPlaceBid: threadOrderPlaceBids){
+            message.append(threadOrderPlaceBid.messageInfo).append("\n");
+        }
+
+        for (ThreadOrderPlaceAsk threadOrderPlaceAsk: threadOrderPlaceAsks){
+            message.append(threadOrderPlaceAsk.messageInfo).append("\n");
+        }
+
+        return message.toString();
+    }
+
+    public void printGuiMessage(){
+        changeRange(messageForRangPair());
     }
 
 

@@ -2,6 +2,7 @@ package main;
 
 import DB_Connection.CRUD;
 import DB_Connection.CRUD_LongStoragePair;
+import Gui.RangePairListener;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
 import org.knowm.xchange.currency.Currency;
@@ -16,21 +17,21 @@ import sale_block.ThreadOrderPlaceAsk;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-class BotBinance {
+public class BotBinance implements Runnable, RangePairListener {
 
     private Exchange binance;
     private Map<CurrencyPair, CurrencyPairMetaData> currencyPairs;
+    private List<RangePairListener> rangePairListenerList = new ArrayList<>();
 
-    BotBinance(String name, String apiKeyB, String secretKeyB) {
+    public BotBinance(String name, String apiKeyB, String secretKeyB) {
         binance = ExchangeFactory.INSTANCE.createExchange(name, apiKeyB, secretKeyB);
     }
 
     /**
      * Метод получает пары с биржи. Оставляет только торгуемые с BTC. Убирает пары долгого хранения.
      */
-    void takeCurrencyPairs() {
+    public void takeCurrencyPairs() {
         //Получил список торговых пар
         ExchangeMetaData exchangeMetaData = binance.getExchangeMetaData();
         Map<CurrencyPair, CurrencyPairMetaData> currencyPairMetaDataMap = exchangeMetaData.getCurrencyPairs();
@@ -51,7 +52,8 @@ class BotBinance {
      * Ранжирование пар
      * Попкупка
      */
-    void Trade() {
+    @Override
+    public void run() {
         try {
 
             // Обновляю список валютных вар для работы/ранжирования их
@@ -60,40 +62,49 @@ class BotBinance {
             // Создал объект по работе с балансом
             BalanceScore balanceScore = new BalanceScore(binance);
 
+            balanceScore.addRangePairListener(message -> {
+                for (RangePairListener rangePairListener : rangePairListenerList)
+                    rangePairListener.changeRange(message);
+            });
+
+            if(!Config.isTradeHelpMode()) {
+                // Делаем отмену ордеров в пункте выше
+                balanceScore.orderBidCancel();
+            }
+
             // Расстановка ордеров на продажу
             balanceScore.orderPlaceAsk();
 
-            // Удалил из списка монет все монеты, которые поставил на покупку
-            balanceScore.removePairForSale(currencyPairsForSale);
+            if(!Config.isTradeHelpMode()) {
 
-            LinkedList<ThreadOrderPlaceAsk> listThreadTicker = balanceScore.getThreadOrderPlaceAsks();
-            for (ThreadOrderPlaceAsk threadOrderPlaceAsk : listThreadTicker) {
-                currencyPairs.keySet().remove(threadOrderPlaceAsk.getCurrencyPair());
+                // Удалил из списка монет все монеты, которые поставил на покупку
+                balanceScore.removePairForSale(currencyPairsForSale);
+
+                LinkedList<ThreadOrderPlaceAsk> listThreadTicker = balanceScore.getThreadOrderPlaceAsks();
+                for (ThreadOrderPlaceAsk threadOrderPlaceAsk : listThreadTicker) {
+                    currencyPairs.keySet().remove(threadOrderPlaceAsk.getCurrencyPair());
+                }
+
+                // Прошелся по списку торговых пар на покупку и создал список объектов рангов
+                RankPairFabric rankPairFabric = new RankPairFabric();
+                List<RankPair> rankPairList = rankPairFabric.generateRankPairList(currencyPairsForSale, binance);
+
+                // Рассчитал для пар ранги
+                for (RankPair rankPair : rankPairList) {
+                    rankPair.calculateRank();
+                }
+
+                // Отсортировал по рангам
+                rankPairList.sort(RankPair.Comparators.RANK);
+
+                // Поставил ордера на покупку
+                balanceScore.orderPlaceBid(rankPairList);
+
             }
 
-            // Прошелся по списку торговых пар на покупку и создал список объектов рангов
-            RankPairFabric rankPairFabric = new RankPairFabric();
-            List<RankPair> rankPairList = rankPairFabric.generateRankPairList(currencyPairsForSale, binance);
+            balanceScore.printGuiMessage();
 
-            // Рассчитал для пар ранги
-            for (RankPair rankPair : rankPairList) {
-                rankPair.calculateRank();
-            }
-
-            // Отсортировал по рангам
-            rankPairList.sort(RankPair.Comparators.RANK);
-
-            // Поставил ордера на покупку
-            balanceScore.orderPlaceBid(rankPairList);
-
-            // Подождал время, достаточное для покупки
-            long millisecondsWait = TimeUnit.SECONDS.toMillis(Config.getSecondsWait());
-            Thread.sleep(millisecondsWait);
-
-            // Делаем отмену ордеров в пункте выше
-            balanceScore.orderBidCancel();
-
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -123,4 +134,16 @@ class BotBinance {
             currencyPairs.entrySet().removeIf(e -> currencyPair.equals(e.getKey()));
         }
     }
+
+    public void addRangePairListener(RangePairListener listener) {
+        rangePairListenerList.add(listener);
+    }
+
+    @Override
+    public void changeRange(String message) {
+        for (RangePairListener rangePairListener : rangePairListenerList)
+            rangePairListener.changeRange(message);
+    }
+
+
 }

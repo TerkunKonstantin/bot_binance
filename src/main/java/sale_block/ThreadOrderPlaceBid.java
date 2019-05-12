@@ -21,7 +21,8 @@ public class ThreadOrderPlaceBid extends Thread {
     private CurrencyPairMetaData currencyPairMetaData;
     private double rank;
     private boolean makeTrade;
-    private static StatServiceApp controller = new StatServiceApp();
+    String messageInfo;
+    //private static StatServiceApp controller = new StatServiceApp();
 
 
     ThreadOrderPlaceBid(CurrencyPair currencyPair, Ticker ticker, double rank, CurrencyPairMetaData currencyPairMetaData, TradeService tradeService) {
@@ -38,7 +39,8 @@ public class ThreadOrderPlaceBid extends Thread {
         Date date = new Date();
         BigDecimal priceForBuy;
         BigDecimal bidWithStep;
-        BigDecimal amount = Config.getMinRate();
+       // BigDecimal amount = Config.getMinRate();
+
         BigDecimal bid = ticker.getBid();
         Integer priceScale = currencyPairMetaData.getPriceScale();
         BigDecimal step = BigDecimal.ONE.movePointLeft(priceScale);
@@ -49,10 +51,13 @@ public class ThreadOrderPlaceBid extends Thread {
         } else {
             priceForBuy = bidWithStep;
         }
+        priceForBuy = priceForBuy.setScale(currencyPairMetaData.getPriceScale(), BigDecimal.ROUND_UP);
+        BigDecimal amount = Config.getMinRate().divide(priceForBuy,currencyPairMetaData.getMinimumAmount().scale(),BigDecimal.ROUND_DOWN);
         LimitOrder bidOrder = new LimitOrder(Order.OrderType.BID, amount, currencyPair, null, null, priceForBuy);
-        System.out.println("Покупаю с: " + date + " Валюту " + currencyPair + " по " + priceForBuy + " с рейтингом " + rank);
-        controller.start(currencyPair.base.toString() + currencyPair.counter.toString(), priceForBuy.toString());
-        /*
+        messageInfo = "Покупаю с: " + date + " Валюту " +currencyPair + " по " + priceForBuy + " с рейтингом " + rank;
+        System.out.println(messageInfo);
+        //controller.start(currencyPair.base.toString() + currencyPair.counter.toString(), priceForBuy.toString());
+
         try {
             tradeService.placeLimitOrder(bidOrder);
             this.makeTrade = true;
@@ -62,7 +67,7 @@ public class ThreadOrderPlaceBid extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-         */
+
     }
 }
 

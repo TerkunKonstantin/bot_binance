@@ -25,6 +25,7 @@ public class ThreadOrderPlaceAsk extends Thread {
     private static BigDecimal profitPercent;
     private TradeService tradeService;
     private boolean makeTrade;
+    String messageInfo;
 
 
     public CurrencyPair getCurrencyPair() {
@@ -55,7 +56,8 @@ public class ThreadOrderPlaceAsk extends Thread {
         if ((amountInBTC.compareTo(minNotional) > 0)) {
             Date datePlace = userTrade.getTimestamp();
             LimitOrder ask = new LimitOrder(Order.OrderType.ASK, amount, currencyPair, null, null, priceForSale);
-            System.out.println("Продаю с: " + datePlace + " Валюту " + currencyPair + " по " + priceForSale);
+            messageInfo = "Продаю с: " + datePlace + " Валюту " + currencyPair + " по " + priceForSale;
+            System.out.println(messageInfo);
             try {
                 tradeService.placeLimitOrder(ask);
                 this.makeTrade = true;
